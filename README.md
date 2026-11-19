@@ -15,6 +15,25 @@ job just keeps moving instead of stopping there.
 Nothing here runs on a timer or inside CI. You kick it off yourself with
 `/factory run`, in Claude Code, in your own repository.
 
+## Install
+
+This repo is the factory itself — there's nothing to pull in here. To bring
+it into a different project, open Claude Code there and paste:
+
+```text
+Install this software factory in this project, following its own install
+instructions:
+
+<path or URL to this repo>
+```
+
+Your agent reads [`INSTALL.md`](INSTALL.md), copies the skill, the agents,
+the scripts, the dashboard and the playbook templates, fills in
+`factory/checks.sh` and the playbooks with that project's real commands and
+real boundaries, tailors the reviewers to its stack, and verifies
+`factory/checks.sh` passes on its base branch before handing the install back
+to you to commit.
+
 ## The shape of it
 
 ```
@@ -146,23 +165,6 @@ row of gate/review chips per round, its risk, its current line, its cost and
 how long it's been running. Click into a card to read every file it's
 produced — each one opens with a short summary at the top so you can skim
 before deciding whether to dig in.
-
-## Installing this into a different project
-
-This repo is the factory itself — there's no separate package to pull in.
-To bring it into another project, open Claude Code there and paste something
-like:
-
-```text
-Install this software factory in this project, following its own install
-instructions: <path or URL to this repo>
-```
-
-Your agent reads this repo's [`INSTALL.md`](INSTALL.md), copies the skill,
-the agents, the scripts, the dashboard and the playbook templates, fills in
-`factory/checks.sh` and the playbooks with this project's real commands and
-real boundaries, tailors the reviewers to its stack, and verifies
-`factory/checks.sh` passes before handing it back to you to commit.
 
 ## Wiring it up for your own project
 
