@@ -1,7 +1,7 @@
 # AGENTS.md
 
 This project is a minimal calculator module, used mainly to exercise the
-software factory below end to end.
+software factory below end to end. Its functions are `add(a, b)` (sum of a and b) and `subtract(a, b)` (a - b).
 
 - **Setup**: nothing to install. `src/calculator.py` and
   `tests/test_calculator.py` use only the standard library.
