@@ -26,7 +26,7 @@ anything or trust a summary.
 | Lines | `factory/config.json` → `lines` | Named stages with their own checks and an optional handoff to whatever comes next. |
 | Playbooks | `factory/playbooks/` | Written policy: what the factory is for, what no line may ever do, what must always escalate. Read by agents, not enforced by a script. |
 | Job state | `factory/jobs/<job-id>/` | `job.json` plus every file an agent wrote for that job. Gitignored, lives only on the machine running the factory. |
-| Control scripts | `factory/bin/job`, `gate`, `route` | Deterministic. `job` is the sole writer of `job.json`, and it refuses anything out of order. |
+| Control scripts | `factory/bin/job`, `gate`, `route`, `pull` | Deterministic. `job` is the sole writer of `job.json`, and it refuses anything out of order. |
 | Checks | one script per line | The project's real lint/test/typecheck/build commands, scoped to what that line produces. |
 | Exit | the base branch | A pass ends either landed there or handed to the next line — never left half-finished. |
 
@@ -58,6 +58,21 @@ the factory only ever spends your own Claude usage when you've decided to
 spend it. Keeping it local also means the worktrees, any dev server a
 reviewer starts, and the dashboard are all sitting right next to each other
 on one machine.
+
+**GitHub issues feed the inbox; they don't replace it.** `factory/bin/pull`
+turns every open, `factory`-labeled issue into a file in `factory/inbox/`,
+marked with the issue number it came from, and leaves it alone from then on
+— the issue can keep changing on GitHub without silently rewriting a topic
+mid-flight. Once pulled, it's indistinguishable from a topic someone typed
+by hand: triage, the lines, the playbooks, none of them know or care where a
+topic came from. This keeps the inbox as the one queue the rest of the
+factory has to understand, instead of teaching every downstream piece two
+different ways to read a request. `pull` is also the only thing in the
+factory that needs `gh` at all, and it's written to fail soft — no `gh`, no
+auth, no problem, the run just continues on whatever's already filed
+locally. The one place the loop closes back to GitHub is `job merge`, which
+closes a pulled topic's originating issue, best-effort, once its job has
+nothing left to run.
 
 **One session runs the whole show.** Whoever runs `/factory run` becomes the
 only orchestrator, starting up to `concurrency` jobs and launching every

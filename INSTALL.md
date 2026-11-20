@@ -42,6 +42,7 @@ factory/checks.sh
 factory/bin/job
 factory/bin/gate
 factory/bin/route
+factory/bin/pull
 factory/dashboard.html
 factory/playbooks/_global.md
 factory/playbooks/build.md
@@ -49,7 +50,7 @@ factory/playbooks/docs.md
 ```
 
 ```bash
-chmod +x factory/checks.sh factory/bin/job factory/bin/gate factory/bin/route
+chmod +x factory/checks.sh factory/bin/job factory/bin/gate factory/bin/route factory/bin/pull
 mkdir -p factory/inbox
 ```
 
@@ -93,6 +94,11 @@ in a real sentence or two what this project actually is, then fill in:
   block a job with no way through. `reviewer-code.md` already catches a test
   that was weakened or special-cased instead of genuinely fixed.
 - `ports`: move `base` if the project already uses ports 5100–5199.
+- `github.issue_label`: only matters if the project wants issues labeled
+  `factory` pulled into the inbox automatically (`factory/bin/pull`). Leave
+  it as `factory` unless that label already means something else here; this
+  whole feature is optional and `gh` doesn't need to be installed for the
+  rest of the factory to work.
 - Leave `concurrency`, `max_rounds`, `routing`, `surface_reviewers` and
   `prices_usd_per_mtok` as shipped unless the user asks otherwise.
 

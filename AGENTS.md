@@ -19,6 +19,8 @@ setting (in `factory/config.json`) can pass a finished job on to another line
 
 - State lives in `factory/jobs/<job-id>/` (gitignored).
 - `factory/bin/job` is the only thing allowed to write that state.
+- `factory/bin/pull` pulls open GitHub issues labeled `factory` into the
+  inbox before each run — optional, and harmless if `gh` isn't set up.
 - Checks: `factory/checks.sh` (plus whatever script other lines point to).
 - Dashboard: `cd factory && python3 -m http.server`, then open
   `http://localhost:8000/dashboard.html`.

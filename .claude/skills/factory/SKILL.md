@@ -68,6 +68,7 @@ state.
 
 ```
 <repo>/factory/inbox/<topic>.md                         a filed topic: title + body
+<repo>/factory/bin/pull                                 pulls open `factory`-labeled GitHub issues into the inbox
 <repo>/factory/playbooks/_global.md                      boundaries every line and every agent must respect
 <repo>/factory/playbooks/<line>.md                       one line's scope and its own escalate list
 <repo>/factory/config.json                               concurrency, round limits, lines, routing, prices
@@ -191,20 +192,28 @@ A job counts as done for this run once it reaches `merged`, `rejected`, or
 
 ## /factory run
 
-1. Run `factory/bin/job queue`. Each row reads
+1. Run `factory/bin/pull` first. It pulls every open, `factory`-labeled
+   GitHub issue that isn't already in the inbox into
+   `factory/inbox/<slug>.md`, so an issue filed on GitHub joins the same
+   queue as a topic filed locally — everything downstream of here treats
+   them identically. It's non-fatal if `gh` isn't installed or authenticated:
+   it says so on stderr and exits 0, and the run just continues with
+   whatever's already in the inbox. Report its output line (or that nothing
+   new came in) in your status line, then continue.
+2. Run `factory/bin/job queue`. Each row reads
    `action  topic  job  stage  note`: `resume` (pick it up where it is),
    `new` (no job yet), `hold` (no open slot), `wait` (needs the operator), or
    `skip`. `concurrency` is enforced here: any job already in a running stage
    holds a slot, and only as many `new` rows as there are open slots come
    back as `new` — the rest show as `hold`. `job create` refuses outright
    when nothing's free.
-2. Start every `resume` and `new` row — nothing else. Never judge a topic
+3. Start every `resume` and `new` row — nothing else. Never judge a topic
    yourself; every new one goes through triage first, which decides whether
    it's worth building at all. For a new topic, `factory/bin/job create <topic>`
    prints the job id; start that job at **triage**.
-3. Every time a job finishes, rerun `factory/bin/job queue` and start
+4. Every time a job finishes, rerun `factory/bin/job queue` and start
    whatever `resume` and `new` rows you haven't already started.
-4. Once nothing is queued or running, print `factory/bin/job summary <ids>`
+5. Once nothing is queued or running, print `factory/bin/job summary <ids>`
    for every job this run touched, then list what's waiting on a human:
    escalated jobs (merge to approve, or give feedback through `/factory`)
    and any open questions waiting on the operator.
@@ -220,9 +229,11 @@ round; `approve` relaunches the approver; `merging` reruns
 
 ## /factory run <topic>
 
-Run a single topic through the same steps. If `factory/bin/job queue` already
-shows a job for it, resume that; otherwise `factory/bin/job create <topic>`.
-Finish with that job's summary line.
+Run `factory/bin/pull` first, same as above, in case the topic names an
+issue that hasn't been pulled in yet. Then run a single topic through the
+same steps: if `factory/bin/job queue` already shows a job for it, resume
+that; otherwise `factory/bin/job create <topic>`. Finish with that job's
+summary line.
 
 ## /factory <anything>
 

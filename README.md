@@ -62,14 +62,14 @@ to you to commit.
 
 | Term | What it means in this project |
 |---|---|
-| **Inbox** | `factory/inbox/*.md`. Anyone with write access to the repo files a request by adding one file. |
+| **Inbox** | `factory/inbox/*.md`. Anyone with write access to the repo files a request by adding one file — by hand, or automatically: `factory/bin/pull` pulls in every open GitHub issue labeled `factory` as its own inbox file, so an issue and a hand-filed topic join the same queue and nothing downstream treats them differently. |
 | **Triage** | The first agent any topic meets. Decides accept / ask-a-question / reject, scores risk and UI/security surfaces, and names which line should build it. |
 | **Factory line** | One configured stage of the pipeline (`factory/config.json` → `lines`). Each has its own checks and, optionally, a `handoff` naming the line after it. Shipped with two: `build` (the code) and `docs` (keep docs matching what shipped). |
 | **Playbook** | `factory/playbooks/_global.md` plus one `factory/playbooks/<line>.md` per line. Written policy — what the factory is for, what no line may ever do, what must always go to a human — that triage, the builder and the approver all read and treat as binding. Not mechanically enforced like a gate; editable without touching any agent's prompt. |
 | **Job** | One topic's entire run through the factory. A job may make several **passes** — one per line it visits — each kept in its own numbered subfolder. |
 | **Agent roles** | One Claude Code subagent per responsibility: `triage`, `spec-writer`, `builder`, the four reviewers, `approver`. Each reads what it needs, writes exactly one file, and reports back in a single line. |
 | **Job state** | `factory/jobs/<job-id>/` — every file that job's agents produced. Gitignored; lives only on the machine actually running the factory. |
-| **Control scripts** | `factory/bin/job`, `gate`, `route` — deterministic. `job` is the only thing allowed to write `job.json`, and it refuses any move that isn't legal. |
+| **Control scripts** | `factory/bin/job`, `gate`, `route`, `pull` — deterministic. `job` is the only thing allowed to write `job.json`, and it refuses any move that isn't legal. |
 | **Checks** | Each line's own check script (`factory/checks.sh` for `build`). The gate runs it before a reviewer ever sees the diff, and again right before landing. |
 
 Three layers do three different jobs, and it's worth keeping them straight:
@@ -104,15 +104,26 @@ that routing lives in `factory/config.json`, never baked into a prompt.
 
 ### 1. File something
 
+Three equally valid ways to get a topic into the inbox:
+
 ```bash
+# by hand, from the command line
 echo "Users should be able to export their data as CSV from the account page." \
   | factory/bin/job add "Add CSV export to the account page"
+
+# or just create the file yourself — its title is whatever its first
+# `# ` line says, everything after that is the body
+
+# or label a GitHub issue `factory` and let the factory notice it:
+gh issue create --label factory --title "Add CSV export to the account page" \
+  --body "Users should be able to export their data as CSV from the account page."
 ```
 
-This writes `factory/inbox/add-csv-export-to-the-account-page.md` and prints
-the slug. You can just as easily create the file by hand instead — its
-title is whatever its first `# ` line says, everything after that is the
-body.
+`factory/bin/job add` writes `factory/inbox/add-csv-export-to-the-account-page.md`
+and prints the slug. A GitHub issue doesn't need that step at all — the next
+`/factory run` pulls every open issue labeled `factory` into its own inbox
+file automatically (via `factory/bin/pull`), marked with the issue number it
+came from. Either way, everything from here on treats the two identically.
 
 ### 2. Run it
 
@@ -122,9 +133,12 @@ From the repo root, inside Claude Code:
 /factory run
 ```
 
-This works through the whole inbox, `concurrency` topics at a time (3 by
-default), and also picks back up anything that was mid-flight when a
-previous session ended — state is files, not memory tied to a session.
+This first pulls in any new GitHub issues labeled `factory`, then works
+through the whole inbox, `concurrency` topics at a time (3 by default), and
+also picks back up anything that was mid-flight when a previous session
+ended — state is files, not memory tied to a session. If `gh` isn't
+installed or authenticated, the pull step just says so and the run continues
+with whatever's already filed locally.
 
 To run just one topic:
 
@@ -134,7 +148,9 @@ To run just one topic:
 
 ### 3. Respond to what comes back
 
-- **Finished and landed**: nothing for you to do.
+- **Finished and landed**: nothing for you to do. If the topic came from a
+  GitHub issue, the factory closes it for you (best-effort — it won't fail
+  the job if `gh` isn't set up).
 - **`needs-info`**: triage had a question only you can answer. Tell the
   factory directly:
 
@@ -190,6 +206,10 @@ yourself, or re-tuning it later.
      the factory's own config and scripts listed here).
    - `concurrency` / `max_rounds`: how many jobs run side by side, and how
      many build-review cycles a pass gets before it escalates.
+   - `github.issue_label`: the label `factory/bin/pull` looks for. Leave it
+     as `factory` unless the repo already uses that label for something
+     else. Pulling issues in is optional — skip this entirely if the inbox
+     should only ever be filed locally.
 4. Tune `.claude/agents/reviewer-security.md`, `reviewer-ui.md` and
    `reviewer-ux.md` to this project's real hot spots, design system and user
    base.
@@ -234,6 +254,7 @@ factory/
   bin/job                      the only writer of job.json; refuses illegal moves; lands changes
   bin/gate                     runs a line's checks in a job's worktree → round-N/checks.md
   bin/route                    turns risk + surfaces into the job's reviewer set
+  bin/pull                     pulls open `factory`-labeled GitHub issues into the inbox
   dashboard.html                the board
 INSTALL.md                      how an agent installs this into another project
 DESIGN.md                        why it's built this way

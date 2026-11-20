@@ -21,6 +21,11 @@ Usage:
   job summary [<job>...]          table of jobs: topic, line, stage, cost, time
 
 <job> is a job id (001-add-a-subtract-function) or a topic slug (add-a-subtract-function).
+
+A topic pulled in from GitHub (factory/bin/pull) carries a
+`<!-- factory-issue: N -->` marker on its first line. `job merge` reads that
+marker and closes the issue, best-effort, once the job has no further line to
+run — see `github_issue` below.
 """
 
 import fcntl
@@ -106,11 +111,21 @@ def topic_path(slug):
     return INBOX / f"{slug}.md"
 
 
+def topic_text(slug):
+    return topic_path(slug).read_text()
+
+
 def topic_title(slug):
-    for line in topic_path(slug).read_text().splitlines():
+    for line in topic_text(slug).splitlines():
         if line.startswith("# "):
             return line[2:].strip()
     return slug
+
+
+def github_issue(slug):
+    """The issue number a topic was pulled in from (factory/bin/pull), or None."""
+    m = re.match(r"<!--\s*factory-issue:\s*(\d+)\s*-->", topic_text(slug).splitlines()[0])
+    return int(m.group(1)) if m else None
 
 
 _locks = {}
@@ -481,6 +496,19 @@ def write_handoff(job, target):
         f"## Delivered\n{delivered}\n\n## Decision\n{decision}\n")
 
 
+def close_linked_issue(job):
+    """Best-effort: if this topic was pulled in from GitHub, close the issue it came from."""
+    n = github_issue(job["topic"])
+    if n is None:
+        return
+    decision = section(pass_dir(job) / "decision.md", "Summary") or "Landed on the base branch."
+    try:
+        run(["gh", "issue", "comment", str(n), "--body", f"Factory: merged.\n\n{decision}"])
+        run(["gh", "issue", "close", str(n)])
+    except Refused:
+        pass  # gh missing, not authenticated, or the issue already changed state — not fatal
+
+
 def cmd_merge(job):
     job = sync(job)
     if job["stage"] in {"approve", "needs-human"}:
@@ -503,6 +531,7 @@ def cmd_merge(job):
         save(sync(job))
         print(f"{job['id']}: {job['passes'][-2]['line']} merged; handed off to {target} (pass {job['pass']})")
     else:
+        close_linked_issue(job)
         job = advance(job, "merged")
         save(sync(job))
         print(f"{job['id']}: merged into {BASE}")
@@ -589,7 +618,6 @@ def cmd_queue():
 
 
 def cmd_answer(job, text):
-    require_slot(job["id"]) if False else None  # slot is checked by advance
     if job["stage"] != "needs-info":
         die(f"{job['id']} is in {job['stage']}, not needs-info")
     if not text.strip():
