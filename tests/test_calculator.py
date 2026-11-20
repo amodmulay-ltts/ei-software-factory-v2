@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from calculator import add, divide, multiply, subtract
+from calculator import add, divide, integrate, multiply, subtract
 
 
 class TestCalculator(unittest.TestCase):
@@ -25,6 +25,18 @@ class TestCalculator(unittest.TestCase):
         self.assertEqual(divide(-6, 3), -2)
         with self.assertRaises(ZeroDivisionError):
             divide(1, 0)
+
+    def test_integrate(self):
+        self.assertAlmostEqual(integrate(lambda x: 3, 0, 2), 6, places=9)
+        self.assertAlmostEqual(integrate(lambda x: x**2, 0, 1), 1 / 3, places=5)
+        self.assertEqual(integrate(lambda x: x**2, 0, 1, n=1), 0.5)
+        self.assertAlmostEqual(integrate(lambda x: x, 0, 2), 2.0, places=9)
+        self.assertAlmostEqual(integrate(lambda x: x, 2, 0), -2.0, places=9)
+        self.assertEqual(integrate(lambda x: x, 1, 1), 0)
+        with self.assertRaises(ValueError):
+            integrate(lambda x: x, 0, 1, n=0)
+        with self.assertRaises(ValueError):
+            integrate(lambda x: x, 0, 1, n=-5)
 
 
 if __name__ == "__main__":

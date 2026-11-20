@@ -19,3 +19,14 @@ def multiply(a, b):
 def divide(a, b):
     """Return the quotient of a and b."""
     return a / b
+
+
+def integrate(f, a, b, n=1000):
+    """Return the integral of f from a to b by the trapezoidal rule with n steps."""
+    if n < 1:
+        raise ValueError("n must be at least 1")
+    h = (b - a) / n
+    total = (f(a) + f(b)) / 2
+    for i in range(1, n):
+        total += f(a + i * h)
+    return h * total
