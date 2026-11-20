@@ -1,14 +1,13 @@
 # AGENTS.md
 
-Right now this repo is just the factory itself — no application code yet.
-Once real code lands here, keep this file current with:
+This project is a minimal calculator module, used mainly to exercise the
+software factory below end to end.
 
-- **Setup**: how to get a fresh checkout running (dependency installs, env
-  files to copy).
-- **Dev server**: how to start it and on what port, assuming the project
-  has one.
-- **Validation**: the exact commands that prove a change is sound — these
-  should line up with `factory/checks.sh`, command for command.
+- **Setup**: nothing to install. `src/calculator.py` and
+  `tests/test_calculator.py` use only the standard library.
+- **Dev server**: none — there's no app to serve.
+- **Validation**: `python3 -m py_compile src/*.py && python3 -m unittest
+  discover -s tests -v` — matches `factory/checks.sh` exactly.
 
 ## About the factory
 

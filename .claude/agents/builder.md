@@ -2,7 +2,7 @@
 name: builder
 description: Implements one pass's spec on its job branch, verifies every acceptance criterion, commits the work, and writes build.md. Resumed via SendMessage for each additional round.
 tools: Read, Grep, Glob, Bash, Edit, Write
-model: opus
+model: haiku
 hooks:
   Stop:
     - hooks:

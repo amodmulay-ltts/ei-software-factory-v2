@@ -5,15 +5,9 @@
 # worktree as the working directory. Keep it fast, deterministic and
 # non-interactive: no watch modes, no prompts, nothing that rewrites files.
 #
-# Fill this in with the project's real lint, typecheck, test and build
-# commands once the project has code, e.g.:
-#
-#   npm ci --prefer-offline
-#   npm run lint
-#   npm run typecheck
-#   npm test -- --run
-#   npm run build
+# This project is currently just a tiny calculator module under src/, tested
+# with the standard library's unittest — no external dependencies to install.
 set -euo pipefail
 
-echo "factory/checks.sh has no checks yet. Add this project's test, lint, typecheck and build commands." >&2
-exit 1
+python3 -m py_compile src/*.py
+python3 -m unittest discover -s tests -v

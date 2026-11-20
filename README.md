@@ -24,7 +24,7 @@ it into a different project, open Claude Code there and paste:
 Install this software factory in this project, following its own install
 instructions:
 
-<path or URL to this repo>
+https://github.com/amodmulay-ltts/ei-software-factory-v2
 ```
 
 Your agent reads [`INSTALL.md`](INSTALL.md), copies the skill, the agents,

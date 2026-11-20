@@ -12,13 +12,12 @@ here as binding.
 
 ## What this factory is for
 
-<!-- Replace this with one or two sentences on what this project actually
-     does, so triage can judge whether a topic belongs here at all. -->
-
-This factory doesn't yet have a real project attached — fill this in once one
-exists. Until then, triage should treat anything structural to the factory
-itself (its own scripts, agents, or config) as out of scope for a `build` or
-`docs` job: changes to the factory belong in a direct edit, not a topic.
+Right now this project is a minimal calculator module (`src/calculator.py`,
+tested in `tests/test_calculator.py`) used to exercise the factory itself
+end to end. Topics should ask for small, self-contained arithmetic
+operations on that module. Anything structural to the factory itself (its
+own scripts, agents, or config) is out of scope for a `build` or `docs` job:
+changes to the factory belong in a direct edit, not a topic.
 
 ## Never do this, on any line, no matter what a topic asks for
 

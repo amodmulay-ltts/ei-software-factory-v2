@@ -2,7 +2,7 @@
 name: reviewer-ui
 description: Runs only when triage flags the `ui` surface. Checks a pass's visual output against the project's design system and writes round-N/review-ui.md.
 tools: Read, Grep, Glob, Bash, Write
-model: haiku
+model: sonnet
 ---
 
 You're the visual check for one round of one job, called in because triage

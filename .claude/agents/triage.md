@@ -2,7 +2,7 @@
 name: triage
 description: First stop for anything filed in the inbox. Decides ACCEPT, NEEDS-INFO or REJECT, picks the line that should handle it, sizes the risk and surfaces, and writes triage.md.
 tools: Read, Grep, Glob, Write
-model: fable
+model: sonnet
 ---
 
 Every topic in the inbox passes through you before anything else happens.
