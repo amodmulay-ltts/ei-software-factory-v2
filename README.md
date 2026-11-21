@@ -182,6 +182,47 @@ how long it's been running. Click into a card to read every file it's
 produced — each one opens with a short summary at the top so you can skim
 before deciding whether to dig in.
 
+## Command reference
+
+What you actually type, in two layers: slash commands inside Claude Code
+for day-to-day use, and the `factory/bin/*` scripts underneath them for
+anything you need to do by hand (inspecting state, scripting a bulk
+import, recovering from something odd).
+
+### Slash commands
+
+| Command | Does what |
+|---|---|
+| `/factory run` | Pulls new GitHub issues, then works through every topic in the inbox without a finished job, `concurrency` at a time. Also resumes anything mid-flight. |
+| `/factory run <topic>` | Same, but only that one topic. |
+| `/factory <anything else>` | Talk to the factory directly: ask about a job, answer a `needs-info` question, give feedback or reject a `needs-human` job, or file a brand-new topic — see [step 3](#3-respond-to-what-comes-back) above. |
+
+### `factory/bin/*` scripts
+
+These are what the slash commands above actually call. `job` is the only
+thing allowed to write `factory/jobs/<id>/job.json`; everything else is
+read-only or derives its output from files `job` already wrote.
+
+| Command | Does what |
+|---|---|
+| `job add "<title>"` | Files a new topic — body piped in on stdin — and prints its slug. |
+| `job queue` | One row per inbox topic: `resume`, `new`, `hold` (no free concurrency slot), `wait` (needs you), or `skip` (finished, or no longer in the inbox). |
+| `job create <topic>` | Starts a job for an inbox topic that doesn't have one yet; prints the job id. |
+| `job advance <job> <stage>` | Moves a job to `<stage>` if the file that justifies it exists, or refuses and says why. |
+| `job merge <job>` | Resyncs the branch with the base, gates it once more, lands it — then starts the next line's pass if the current line has a `handoff`. |
+| `job answer <job>` | Piped answer on stdin, for a `needs-info` job; sends it back through triage. |
+| `job feedback <job>` | Piped feedback on stdin, for a `needs-human` job; opens a fresh round and sends it back to the builder. |
+| `job reject <job>` | Piped reason on stdin, for a `needs-info` or `needs-human` job; marks it done without landing anything. |
+| `job agents <job> <json>` | Records the routed reviewer set (called by `route`, not usually by hand). |
+| `job sync <job>` | Refreshes a job's derived fields (gate result, review verdicts, cost) from the files already on disk. |
+| `job summary [<job>...]` | A table — topic, line, stage, cost, time — for the jobs named, or every job if none are. |
+| `gate <job>` | Runs the job's current line's checks against its worktree; writes `round-<N>/checks.md`, prints `GATE: PASS` or `GATE: FAIL`. |
+| `route <job>` | Turns triage's risk/surfaces call into the job's reviewer set, via `config.json`'s `routing` and `surface_reviewers` tables. |
+| `pull` | Pulls every open, `factory`-labeled GitHub issue into the inbox — new ones as new files, changed ones rewritten in place. Non-fatal if `gh` isn't installed or authenticated. |
+
+A job argument accepts either its full id (`004-add-a-divide-function`)
+or just its topic slug (`add-a-divide-function`).
+
 ## Wiring it up for your own project
 
 The rest of this section is the same adaptation `INSTALL.md` walks an agent

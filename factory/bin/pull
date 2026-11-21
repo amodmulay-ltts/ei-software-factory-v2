@@ -6,9 +6,12 @@ Usage: pull
 For every open issue on this repo's GitHub remote carrying config.json's
 `github.issue_label`, writes factory/inbox/<slug>.md — the issue's title as
 its heading, its body underneath, marked on its first line with
-`<!-- factory-issue: N -->` — unless a file already carries that marker, in
-which case it's left alone even if the issue changed since. Prints one line
-per topic it creates; nothing printed means nothing new to pull.
+`<!-- factory-issue: N -->`. An issue not seen before gets a new file; one
+already pulled gets its file rewritten in place, same filename, if the
+issue's title or body has changed since — the slug never changes on an
+update, so a job already created for that topic still resolves to the same
+file. Prints one line per topic it creates or updates; nothing printed means
+nothing changed.
 
 This step is optional and non-fatal: if `gh` isn't installed, isn't
 authenticated, or this repo has no GitHub remote, it says so on stderr and
@@ -49,14 +52,14 @@ def gh_issues():
 
 
 def already_pulled():
-    """Issue numbers that already have a file in the inbox."""
-    seen = set()
+    """Issue number -> inbox file, for every issue already pulled in."""
+    seen = {}
     if not INBOX.exists():
         return seen
     for path in INBOX.glob("*.md"):
         m = MARKER.match(path.read_text().split("\n", 1)[0])
         if m:
-            seen.add(int(m.group(1)))
+            seen[int(m.group(1))] = path
     return seen
 
 
@@ -65,29 +68,40 @@ def slugify(title):
     return "-".join(words) or "issue"
 
 
+def render(issue):
+    return (
+        f"<!-- factory-issue: {issue['number']} -->\n"
+        f"# {issue['title']}\n\n"
+        f"{(issue['body'] or '').strip()}\n"
+    )
+
+
 def main():
     issues = gh_issues()
     if issues is None:
         return
     INBOX.mkdir(parents=True, exist_ok=True)
     seen = already_pulled()
-    pulled_any = False
+    changed_any = False
     for issue in sorted(issues, key=lambda i: i["number"]):
+        text = render(issue)
         if issue["number"] in seen:
+            path = seen[issue["number"]]
+            if path.read_text() == text:
+                continue
+            path.write_text(text)
+            print(f"{path.stem}\tissue #{issue['number']} (updated)")
+            changed_any = True
             continue
         slug = slugify(issue["title"])
         path = INBOX / f"{slug}.md"
         if path.exists():  # title collides with an unrelated, already-filed topic
             slug = f"{slug}-{issue['number']}"
             path = INBOX / f"{slug}.md"
-        path.write_text(
-            f"<!-- factory-issue: {issue['number']} -->\n"
-            f"# {issue['title']}\n\n"
-            f"{(issue['body'] or '').strip()}\n"
-        )
+        path.write_text(text)
         print(f"{slug}\tissue #{issue['number']}")
-        pulled_any = True
-    if not pulled_any:
+        changed_any = True
+    if not changed_any:
         note("nothing new to pull")
 
 
